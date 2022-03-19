@@ -9,7 +9,7 @@ import android.widget.Button;
 
 import com.google.firebase.auth.FirebaseAuth;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
     Button buttonProfile;
     FirebaseAuth mAuth;
@@ -22,17 +22,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mAuth = FirebaseAuth.getInstance();
         buttonProfile = (Button) findViewById(R.id.btnProfile);
-        buttonProfile.setOnClickListener(this);
+        buttonProfile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, EditProfile.class));
+            }
+        });
     }
 
-
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()){
-            case R.id.btnProfile:
-                startActivity(new Intent(this,EditProfile.class));
-                break;
-        }
-
-    }
 }
