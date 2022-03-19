@@ -17,11 +17,15 @@ import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StorageTask;
+import com.squareup.picasso.Picasso;
 import com.theartofdev.edmodo.cropper.CropImage;
 
 import java.util.HashMap;
@@ -56,6 +60,8 @@ public class EditProfile extends AppCompatActivity {
         closeButton = findViewById(R.id.closeBtn);
         saveButton = findViewById(R.id.saveBtn);
 
+        changeProfile = findViewById(R.id.tvChangeProfile);
+
         closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -77,6 +83,27 @@ public class EditProfile extends AppCompatActivity {
             }
         });
 
+        getUserinfo();
+
+    }
+
+    private void getUserinfo() {
+        databaseReference.child(mAuth.getCurrentUser().getUid()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists() && snapshot.getChildrenCount() > 0){
+                    if (snapshot.hasChild("image")){
+                        String image = snapshot.child("image").getValue().toString();
+                        Picasso.get().load(image).into(profileImage);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
     }
 
     @Override
@@ -89,7 +116,7 @@ public class EditProfile extends AppCompatActivity {
             profileImage.setImageURI(imageUri);
 
         }else {
-            Toast.makeText(this, "Error, try again!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Error, try again!", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -109,7 +136,7 @@ public class EditProfile extends AppCompatActivity {
                 @Override
                 public Object then(@NonNull Task task) throws Exception {
                     if (task.isSuccessful()){
-                        throw task.getException()
+                        throw task.getException();
                     }
                     return fileRef.getDownloadUrl();
                 }
@@ -118,18 +145,24 @@ public class EditProfile extends AppCompatActivity {
                 public void onComplete(@NonNull Task<Uri> task) {
 
                     if (task.isSuccessful()){
-                        Uri downloadUri = (Uri) task.getResult();
+                        Uri downloadUri = task.getResult();
                         myUri = downloadUri.toString();
 
                         HashMap<String, Object> userMap = new HashMap<>();
                         userMap.put("image", myUri);
 
-                        databaseReference.child(mAuth.getCurrentUser().getUid().updateChildren())
+                        databaseReference.child(mAuth.getCurrentUser().getUid()).updateChildren(userMap);
+
+                        progressDialog.dismiss();
 
                     }
 
                 }
             });
+        }
+        else {
+            progressDialog.dismiss();
+            Toast.makeText(this, "Image not selected",Toast.LENGTH_SHORT).show();
         }
     }
 }
